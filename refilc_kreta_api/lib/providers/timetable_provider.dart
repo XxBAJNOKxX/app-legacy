@@ -104,7 +104,9 @@ class TimetableProvider with ChangeNotifier {
     if (user == null) throw "Cannot fetch Lessons for User null";
 
     if (DemoData.isDemo(user.id)) {
-      lessons = DemoData.timetable;
+      // Merge into the existing map instead of replacing it, so weeks that
+      // were already loaded stay available when swiping back and forth.
+      lessons[week] = DemoData.timetableForWeek(week);
       notifyListeners();
       return;
     }

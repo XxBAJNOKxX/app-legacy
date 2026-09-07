@@ -46,6 +46,8 @@ Future<void> syncAll(BuildContext context) async {
     await Provider.of<HomeworkProvider>(context, listen: false)
         .fetch(from: DateTime.now().subtract(const Duration(days: 30)));
     await Provider.of<MessageProvider>(context, listen: false).fetchAll();
+    await Provider.of<MessageProvider>(context, listen: false)
+        .fetchAllRecipients();
     await Provider.of<NoteProvider>(context, listen: false).fetch();
     await Provider.of<EventProvider>(context, listen: false).fetch();
     await Provider.of<AbsenceProvider>(context, listen: false).fetch();

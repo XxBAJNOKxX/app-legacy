@@ -102,6 +102,28 @@ class LoginScreenState extends State<LoginScreen> {
   }
 
   double paddingTop = 0;
+
+  /// Creates the demo account and navigates into the app.
+  ///
+  /// Shared by the demo button, the hidden app-icon shortcut and the
+  /// KRÉTA web-view fallback so that every entry point behaves the same.
+  /// Pass [sheetContext] when launching from inside a bottom sheet so that
+  /// the sheet is dismissed first.
+  void startDemoMode({BuildContext? sheetContext}) {
+    if (!mounted) return;
+
+    if (sheetContext != null && Navigator.of(sheetContext).canPop()) {
+      Navigator.of(sheetContext).pop();
+    }
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final demoUser = User.demo();
+    userProvider.addUser(demoUser);
+    userProvider.setUser(demoUser.id);
+    setSystemChrome(context);
+    Navigator.of(context).pushReplacementNamed('login_to_navigation');
+  }
+
   @override
   Widget build(BuildContext context) {
     precacheImage(const AssetImage('assets/images/showcase1.png'), context);
@@ -138,12 +160,7 @@ class LoginScreenState extends State<LoginScreen> {
                               setState(() => _demoTapCount++);
                               if (_demoTapCount >= 10) {
                                 _demoTapCount = 0;
-                                final userProvider = Provider.of<UserProvider>(context, listen: false);
-                                final demoUser = User.demo();
-                                userProvider.addUser(demoUser);
-                                userProvider.setUser(demoUser.id);
-                                setSystemChrome(context);
-                                Navigator.of(context).pushReplacementNamed('login_to_navigation');
+                                startDemoMode();
                               }
                             },
                             child: Image.asset(
@@ -359,18 +376,10 @@ class LoginScreenState extends State<LoginScreen> {
                                                                     .pop();
                                                               }
                                                             },
-                                                            onDemoMode: () {
-                                                              if (!mounted) return;
-                                                              if (Navigator.of(sheetContext).canPop()) {
-                                                                Navigator.of(sheetContext).pop();
-                                                              }
-                                                              final userProvider = Provider.of<UserProvider>(context, listen: false);
-                                                              final demoUser = User.demo();
-                                                              userProvider.addUser(demoUser);
-                                                              userProvider.setUser(demoUser.id);
-                                                              setSystemChrome(context);
-                                                              Navigator.of(context).pushReplacementNamed('login_to_navigation');
-                                                            },
+                                                            onDemoMode: () =>
+                                                                startDemoMode(
+                                                                    sheetContext:
+                                                                        sheetContext),
                                                           ),
                                                         ),
                                                       ),
@@ -397,6 +406,30 @@ class LoginScreenState extends State<LoginScreen> {
                                             color: AppColors.of(context).loginPrimary,
                                             fontWeight: FontWeight.w700),
                                       )),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // demo account - lets you try every feature
+                              // without a real e-KRÉTA login
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16),
+                                child: TextButton.icon(
+                                  onPressed: startDemoMode,
+                                  icon: const Icon(Icons.science_outlined,
+                                      size: 18),
+                                  label: Text(
+                                    "demo_login".i18n,
+                                    style: const TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor:
+                                        AppColors.of(context).loginSecondary,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 12),

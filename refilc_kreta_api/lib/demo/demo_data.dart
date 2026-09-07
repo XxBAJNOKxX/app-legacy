@@ -1,12 +1,14 @@
 import 'package:refilc/models/user.dart';
 import 'package:refilc_kreta_api/models/absence.dart';
 import 'package:refilc_kreta_api/models/category.dart';
+import 'package:refilc_kreta_api/models/event.dart';
 import 'package:refilc_kreta_api/models/exam.dart';
 import 'package:refilc_kreta_api/models/grade.dart';
 import 'package:refilc_kreta_api/models/group_average.dart';
 import 'package:refilc_kreta_api/models/homework.dart';
 import 'package:refilc_kreta_api/models/lesson.dart';
 import 'package:refilc_kreta_api/models/message.dart';
+import 'package:refilc_kreta_api/models/note.dart';
 import 'package:refilc_kreta_api/models/recipient.dart';
 import 'package:refilc_kreta_api/models/subject.dart';
 import 'package:refilc_kreta_api/models/teacher.dart';
@@ -127,10 +129,20 @@ class DemoData {
     );
   }
 
+  /// Timetable for the current week only.
+  ///
+  /// Prefer [timetableForWeek] - this getter is only useful for callers that
+  /// explicitly want the current week.
   static Map<Week, List<Lesson>> get timetable {
     final week = Week.current();
-    return {week: _lessonsForWeek(week)};
+    return {week: timetableForWeek(week)};
   }
+
+  /// Builds the demo timetable for any given [week].
+  ///
+  /// The schedule repeats every week, so swiping forwards or backwards in the
+  /// timetable page keeps returning lessons instead of an empty page.
+  static List<Lesson> timetableForWeek(Week week) => _lessonsForWeek(week);
 
   static List<Lesson> _lessonsForWeek(Week week) {
     final monday = week.start;
@@ -159,7 +171,8 @@ class DemoData {
       _LessonDef('Kémia', _subjectChem, _teacherVarga, '206', '9A'),
       _LessonDef('Angol nyelv', _subjectEng, _teacherSzabo, '102', '9A'),
       _LessonDef('Történelem', _subjectHist, _teacherToth, '105', '9A'),
-      _LessonDef('Testnevelés', _subjectPE, _teacherFekete, 'Tornaterem', '9A'),
+      _LessonDef('Testnevelés', _subjectPE, _teacherFekete, 'Tornaterem', '9A',
+          cancelled: true),
     ]));
 
     // Thursday
@@ -174,7 +187,8 @@ class DemoData {
     lessons.addAll(_dayLessons(monday.add(const Duration(days: 4)), [
       _LessonDef('Magyar nyelv és irodalom', _subjectHun, _teacherKovacs, '203', '9A'),
       _LessonDef('Kémia', _subjectChem, _teacherVarga, '206', '9A'),
-      _LessonDef('Matematika', _subjectMath, _teacherNagy, '101', '9A'),
+      _LessonDef('Matematika', _subjectMath, _teacherNagy, '101', '9A',
+          substitute: _teacherToth),
       _LessonDef('Angol nyelv', _subjectEng, _teacherSzabo, '102', '9A'),
     ]));
 
@@ -190,11 +204,14 @@ class DemoData {
       final start = time;
       final end = time.add(const Duration(minutes: 45));
       result.add(Lesson(
-        id: 'demo-lesson-${day.weekday}-$i',
+        // Date is part of the id so that lessons from different weeks do not
+        // collide in the database.
+        id: 'demo-lesson-${day.year}-${day.month}-${day.day}-$i',
         date: day,
         subject: def.subject,
         lessonIndex: '${i + 1}',
         teacher: def.teacher,
+        substituteTeacher: def.substitute,
         start: start,
         end: end,
         homeworkId: '',
@@ -202,6 +219,15 @@ class DemoData {
         room: def.room,
         groupName: def.group,
         name: def.name,
+        // "Elmaradt" is the status name the UI looks for to mark a lesson as
+        // cancelled (see Lesson.isChanged and LessonTile).
+        status: def.cancelled
+            ? Category(
+                id: 'demo-status-cancelled',
+                name: 'Elmaradt',
+                description: 'Elmaradt',
+              )
+            : null,
       ));
       time = end.add(const Duration(minutes: 15));
     }
@@ -321,6 +347,7 @@ class DemoData {
     ];
   }
 
+  /// Inbox messages. See [messagesFor] for the other folders.
   static List<Message> get messages {
     final now = DateTime.now();
     return [
@@ -369,6 +396,224 @@ class DemoData {
     ];
   }
 
+  /// Messages the demo student has sent.
+  static List<Message> get sentMessages {
+    final now = DateTime.now();
+    return [
+      _makeMessage(
+        id: 20001,
+        date: now.subtract(const Duration(days: 2)),
+        author: 'Demo Diák',
+        subject: 'Kérdés a dolgozattal kapcsolatban',
+        content:
+            'Tisztelt Nagy Katalin!\n\nSzeretnék érdeklődni, hogy a legutóbbi matematikadolgozatot mikor tudom megtekinteni.\n\nÜdvözlettel,\nDemo Diák',
+        type: MessageType.sent,
+        seen: true,
+      ),
+      _makeMessage(
+        id: 20002,
+        date: now.subtract(const Duration(days: 9)),
+        author: 'Demo Diák',
+        subject: 'Hiányzás igazolása',
+        content:
+            'Tisztelt Osztályfőnök!\n\nEzúton igazolom, hogy a múlt heti hiányzásom orvosilag igazolt volt.\n\nÜdvözlettel,\nDemo Diák',
+        type: MessageType.sent,
+        seen: true,
+      ),
+    ];
+  }
+
+  /// Messages moved to the trash.
+  static List<Message> get trashMessages {
+    final now = DateTime.now();
+    return [
+      _makeMessage(
+        id: 30001,
+        date: now.subtract(const Duration(days: 21)),
+        author: 'Varga Erzsébet',
+        subject: 'Elmaradt fizika szakkör',
+        content:
+            'Kedves Diákok!\n\nA holnapra tervezett fizika szakkör technikai okok miatt elmarad.\n\nÜdvözlettel,\nVarga Erzsébet',
+        type: MessageType.trash,
+        seen: true,
+      ),
+    ];
+  }
+
+  /// Returns the demo messages belonging to [type].
+  ///
+  /// [MessageType.draft] is intentionally empty - the API never returns
+  /// drafts either (see MessageProvider.fetch).
+  static List<Message> messagesFor(MessageType type) {
+    switch (type) {
+      case MessageType.inbox:
+        return messages;
+      case MessageType.sent:
+        return sentMessages;
+      case MessageType.trash:
+        return trashMessages;
+      case MessageType.draft:
+        return const [];
+    }
+  }
+
+  static Message _makeMessage({
+    required int id,
+    required DateTime date,
+    required String author,
+    required String subject,
+    required String content,
+    required MessageType type,
+    required bool seen,
+  }) {
+    return Message(
+      id: id,
+      messageId: id,
+      seen: seen,
+      deleted: false,
+      date: date,
+      author: author,
+      content: content,
+      subject: subject,
+      type: type,
+      recipients: [Recipient(id: 1, name: 'Demo Diák', kretaId: 1)],
+      attachments: [],
+      isSeen: seen,
+    );
+  }
+
+  /// Addressable recipients, so the compose-message screen has something to
+  /// pick from in demo mode.
+  static List<SendRecipient> get recipients => [
+        _makeRecipient(101, 'Nagy Katalin', _recipientTypeTeacher),
+        _makeRecipient(102, 'Kovács Mária', _recipientTypeTeacher),
+        _makeRecipient(103, 'Szabó Péter', _recipientTypeTeacher),
+        _makeRecipient(104, 'Tóth László', _recipientTypeTeacher),
+        _makeRecipient(105, 'Varga Erzsébet', _recipientTypeTeacher),
+        _makeRecipient(106, 'Fekete Gábor', _recipientTypeTeacher),
+        _makeRecipient(201, 'Demo Iskola Igazgatósága', _recipientTypeDirect),
+      ];
+
+  /// Recipients for a single addressee category.
+  ///
+  /// MessageProvider fetches teachers and the directorate separately and
+  /// merges the results, so handing back the matching subset keeps the
+  /// compose-message list free of duplicates.
+  static List<SendRecipient> recipientsFor(AddresseeType type) {
+    final code = type == AddresseeType.teachers ? 'TANAR' : 'IGAZGATOSAG';
+    return recipients.where((r) => r.type.code == code).toList();
+  }
+
+  static SendRecipient _makeRecipient(
+      int id, String name, SendRecipientType type) {
+    return SendRecipient(
+      id: id,
+      kretaId: id,
+      name: name,
+      type: type,
+    );
+  }
+
+  // The codes must match what MessageProvider.storeRecipients filters on.
+  static final _recipientTypeTeacher = SendRecipientType(
+    id: 1,
+    code: 'TANAR',
+    description: 'Tanár',
+    name: 'Tanár',
+    shortName: 'Tanár',
+  );
+  static final _recipientTypeDirect = SendRecipientType(
+    id: 2,
+    code: 'IGAZGATOSAG',
+    description: 'Igazgatóság',
+    name: 'Igazgatóság',
+    shortName: 'Igazg.',
+  );
+
+  static final _noteTypeMissingHomework = Category(
+    id: 'HaziFeladatHiany',
+    name: 'HaziFeladatHiany',
+    description: 'Házi feladat hiány',
+  );
+  static final _noteTypeMissingEquipment = Category(
+    id: 'Felszereleshiany',
+    name: 'Felszereleshiany',
+    description: 'Felszerelés hiány',
+  );
+  static final _noteTypePraise = Category(
+    id: 'Dicséret',
+    name: 'Dicséret',
+    description: 'Dicséret',
+  );
+  static final _noteTypeClassWork = Category(
+    id: 'ÓraiMunka',
+    name: 'ÓraiMunka',
+    description: 'Órai munka',
+  );
+
+  /// Teacher notes. The two "miss" types below are also what the absences
+  /// page lists under the misses filter.
+  static List<Note> get notes {
+    final now = DateTime.now();
+    return [
+      _makeNote('demo-note-1', 'Hiányzó házi feladat', 'Matematika: a 84-85. oldal feladatai hiányoznak.',
+          now.subtract(const Duration(days: 3)), _teacherNagy, _noteTypeMissingHomework),
+      _makeNote('demo-note-2', 'Hiányzó házi feladat', 'Angol nyelv: a munkafüzet 42. oldala nincs kitöltve.',
+          now.subtract(const Duration(days: 9)), _teacherSzabo, _noteTypeMissingHomework),
+      _makeNote('demo-note-3', 'Hiányzó felszerelés', 'Testnevelés: nincs tornafelszerelés.',
+          now.subtract(const Duration(days: 11)), _teacherFekete, _noteTypeMissingEquipment),
+      _makeNote('demo-note-4', 'Dicséret', 'Kiváló órai munka és segítőkész magatartás.',
+          now.subtract(const Duration(days: 6)), _teacherKovacs, _noteTypePraise),
+      _makeNote('demo-note-5', 'Órai munka', 'Aktív részvétel a kémia órán végzett kísérletben.',
+          now.subtract(const Duration(days: 13)), _teacherVarga, _noteTypeClassWork),
+    ];
+  }
+
+  static Note _makeNote(String id, String title, String content, DateTime date,
+      Teacher teacher, Category type) {
+    return Note(
+      id: id,
+      title: title,
+      date: date,
+      submitDate: date,
+      teacher: teacher,
+      seenDate: date,
+      groupId: 'demo-group',
+      content: content,
+      type: type,
+    );
+  }
+
+  /// School-wide events shown on the home page.
+  static List<Event> get events {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return [
+      Event(
+        id: 'demo-event-1',
+        start: today.add(const Duration(days: 4, hours: 17)),
+        end: today.add(const Duration(days: 4, hours: 19)),
+        title: 'Szülői értekezlet',
+        content:
+            'Tájékoztatjuk a kedves szülőket, hogy a 9.A osztály számára szülői értekezletet tartunk.',
+      ),
+      Event(
+        id: 'demo-event-2',
+        start: today.add(const Duration(days: 11, hours: 8)),
+        end: today.add(const Duration(days: 11, hours: 16)),
+        title: 'Osztálykirándulás',
+        content: 'A 9.A osztály egész napos kiránduláson vesz részt.',
+      ),
+      Event(
+        id: 'demo-event-3',
+        start: today.add(const Duration(days: 20)),
+        end: today.add(const Duration(days: 26)),
+        title: 'Tavaszi szünet',
+        content: 'Az iskolában ebben az időszakban tanítási szünet van.',
+      ),
+    ];
+  }
+
   static List<GroupAverage> get groupAverages => [
         GroupAverage(uid: 'demo-avg-math', average: 4.2, subject: _subjectMath),
         GroupAverage(uid: 'demo-avg-hun', average: 3.8, subject: _subjectHun),
@@ -390,5 +635,13 @@ class _LessonDef {
   final Teacher teacher;
   final String room;
   final String group;
-  const _LessonDef(this.name, this.subject, this.teacher, this.room, this.group);
+
+  /// Renders the lesson as cancelled.
+  final bool cancelled;
+
+  /// Renders the lesson as taught by a substitute teacher.
+  final Teacher? substitute;
+
+  const _LessonDef(this.name, this.subject, this.teacher, this.room, this.group,
+      {this.cancelled = false, this.substitute});
 }

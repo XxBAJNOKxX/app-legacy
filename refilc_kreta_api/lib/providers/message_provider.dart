@@ -9,6 +9,7 @@ import 'package:refilc_kreta_api/client/api.dart';
 import 'package:refilc_kreta_api/client/client.dart';
 import 'package:refilc_kreta_api/demo/demo_data.dart';
 import 'package:refilc_kreta_api/models/message.dart';
+import 'package:refilc_kreta_api/models/recipient.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -60,9 +61,7 @@ class MessageProvider with ChangeNotifier {
     if (user == null) throw "Cannot fetch Messages for User null";
 
     if (DemoData.isDemo(user.id)) {
-      if (type == MessageType.inbox) {
-        await store(DemoData.messages, type);
-      }
+      await store(DemoData.messagesFor(type), type);
       return;
     }
 
@@ -136,7 +135,10 @@ class MessageProvider with ChangeNotifier {
     User? user = Provider.of<UserProvider>(_context, listen: false).user;
     if (user == null) throw "Cannot fetch Messages for User null";
 
-    if (DemoData.isDemo(user.id)) return;
+    if (DemoData.isDemo(user.id)) {
+      await storeRecipients(DemoData.recipientsFor(type), type);
+      return;
+    }
 
     // get categories
     List? availableCategoriesJson =
@@ -229,6 +231,44 @@ class MessageProvider with ChangeNotifier {
 
     User? user = Provider.of<UserProvider>(_context, listen: false).user;
     if (user == null) throw "Cannot send Message as User null";
+
+    // Demo accounts have no backend, so echo the message into the sent folder
+    // locally to keep the compose flow testable.
+    if (DemoData.isDemo(user.id)) {
+      final now = DateTime.now();
+      final id = now.millisecondsSinceEpoch;
+
+      // store() replaces the whole folder, so keep the messages already there.
+      final sent =
+          _messages.where((m) => m.type == MessageType.sent).toList();
+
+      await store([
+        ...sent,
+        Message(
+          id: id,
+          messageId: id,
+          seen: true,
+          deleted: false,
+          date: now,
+          author: user.name,
+          content: messageText,
+          subject: subject,
+          type: MessageType.sent,
+          recipients: [
+            for (final r in recipients)
+              Recipient(
+                id: r.kretaId ?? 0,
+                name: r.name ?? "",
+                kretaId: r.kretaId ?? 0,
+              ),
+          ],
+          attachments: [],
+          isSeen: true,
+        ),
+      ], MessageType.sent);
+
+      return 'successfully_sent';
+    }
 
     // for (var r in recipients) {
     //   recipientList.add({
