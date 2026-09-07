@@ -91,7 +91,25 @@ jobs:
         run: |
           cd refilc
           chmod +x build.sh
-          ./build.sh
+          set -o pipefail
+          ./build.sh 2>&1 | tee ../build.log
+
+      # Annotations are visible in the PR checks UI without opening the raw
+      # log, so surface the failure there rather than only in build.log.
+      - name: Report build errors as annotations
+        if: failure()
+        run: |
+          if [ ! -f build.log ]; then
+            echo "::error::build.log missing - the build step never produced output"
+            exit 0
+          fi
+          hits=$(grep -aE "error:|Error:|Exception|FAILURE|What went wrong|Compilation failed|Target .* failed|Undefined name|isn't a type|No named parameter|positional argument" build.log | head -50)
+          if [ -z "$hits" ]; then
+            hits=$(tail -50 build.log)
+          fi
+          printf '%s\n' "$hits" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | while IFS= read -r line; do
+            [ -n "$line" ] && echo "::error::${line}"
+          done
 
       - name: List build output
         run: |
