@@ -28,6 +28,13 @@ class AbsenceProvider with ChangeNotifier {
   Future<void> restore() async {
     String? userId = Provider.of<UserProvider>(_context, listen: false).id;
 
+    // Demo account: data is generated locally and is not stored in the DB
+    if (userId != null && DemoData.isDemo(userId)) {
+      _absences = DemoData.absences;
+      await convertBySettings();
+      return;
+    }
+
     // Load absences from the database
     if (userId != null) {
       var dbAbsences =

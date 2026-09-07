@@ -26,6 +26,13 @@ class NoteProvider with ChangeNotifier {
   Future<void> restore() async {
     String? userId = Provider.of<UserProvider>(_context, listen: false).id;
 
+    // Demo account: data is generated locally and is not stored in the DB
+    if (userId != null && DemoData.isDemo(userId)) {
+      _notes = DemoData.notes;
+      notifyListeners();
+      return;
+    }
+
     // Load notes from the database
     if (userId != null) {
       var dbNotes = await Provider.of<DatabaseProvider>(_context, listen: false)
@@ -40,7 +47,10 @@ class NoteProvider with ChangeNotifier {
   Future<void> fetch() async {
     User? user = Provider.of<UserProvider>(_context, listen: false).user;
     if (user == null) throw "Cannot fetch Notes for User null";
-    if (DemoData.isDemo(user.id)) return;
+    if (DemoData.isDemo(user.id)) {
+      await store(DemoData.notes);
+      return;
+    }
     String iss = user.instituteCode;
 
     List? notesJson = await Provider.of<KretaClient>(_context, listen: false)

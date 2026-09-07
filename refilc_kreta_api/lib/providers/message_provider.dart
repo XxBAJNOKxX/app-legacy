@@ -9,6 +9,7 @@ import 'package:refilc_kreta_api/client/api.dart';
 import 'package:refilc_kreta_api/client/client.dart';
 import 'package:refilc_kreta_api/demo/demo_data.dart';
 import 'package:refilc_kreta_api/models/message.dart';
+import 'package:refilc_kreta_api/models/recipient.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -34,6 +35,13 @@ class MessageProvider with ChangeNotifier {
 
   Future<void> restore() async {
     String? userId = Provider.of<UserProvider>(_context, listen: false).id;
+
+    // Demo account: data is generated locally and is not stored in the DB
+    if (userId != null && DemoData.isDemo(userId)) {
+      _messages = [...DemoData.messages, ...DemoData.sentMessages];
+      notifyListeners();
+      return;
+    }
 
     // Load messages from the database
     if (userId != null) {
@@ -62,6 +70,12 @@ class MessageProvider with ChangeNotifier {
     if (DemoData.isDemo(user.id)) {
       if (type == MessageType.inbox) {
         await store(DemoData.messages, type);
+      } else if (type == MessageType.sent) {
+        // keep locally simulated sent messages (see sendMessage)
+        final simulatedSent = _messages
+            .where((m) => m.type == MessageType.sent && m.id > 1000000)
+            .toList();
+        await store([...DemoData.sentMessages, ...simulatedSent], type);
       }
       return;
     }
@@ -136,7 +150,16 @@ class MessageProvider with ChangeNotifier {
     User? user = Provider.of<UserProvider>(_context, listen: false).user;
     if (user == null) throw "Cannot fetch Messages for User null";
 
-    if (DemoData.isDemo(user.id)) return;
+    if (DemoData.isDemo(user.id)) {
+      final typeCode =
+          type == AddresseeType.teachers ? 'TANAR' : 'IGAZGATOSAG';
+      await storeRecipients(
+          DemoData.recipients
+              .where((r) => r.type.code == typeCode)
+              .toList(),
+          type);
+      return;
+    }
 
     // get categories
     List? availableCategoriesJson =
@@ -229,6 +252,38 @@ class MessageProvider with ChangeNotifier {
 
     User? user = Provider.of<UserProvider>(_context, listen: false).user;
     if (user == null) throw "Cannot send Message as User null";
+
+    // Demo account: simulate sending and keep the message locally
+    if (DemoData.isDemo(user.id)) {
+      final now = DateTime.now();
+      final sentMessage = Message(
+        id: now.millisecondsSinceEpoch,
+        messageId: now.millisecondsSinceEpoch,
+        seen: true,
+        deleted: false,
+        date: now,
+        author: user.name,
+        content: messageText,
+        subject: subject,
+        type: MessageType.sent,
+        recipients: recipients
+            .map((e) => Recipient(
+                  id: e.kretaId ?? 0,
+                  kretaId: e.kretaId ?? 0,
+                  name: e.name ?? '',
+                ))
+            .toList(),
+        attachments: [],
+        isSeen: true,
+      );
+      await store(
+          [
+            sentMessage,
+            ..._messages.where((m) => m.type == MessageType.sent)
+          ],
+          MessageType.sent);
+      return 'successfully_sent';
+    }
 
     // for (var r in recipients) {
     //   recipientList.add({

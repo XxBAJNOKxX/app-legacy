@@ -38,6 +38,13 @@ class HomeworkProvider with ChangeNotifier {
   Future<void> restore() async {
     String? userId = Provider.of<UserProvider>(_context, listen: false).id;
 
+    // Demo account: data is generated locally and is not stored in the DB
+    if (userId != null && DemoData.isDemo(userId)) {
+      _homework = DemoData.homework;
+      await convertBySettings();
+      return;
+    }
+
     // Load homework from the database
     if (userId != null) {
       var dbHomework =
@@ -78,7 +85,9 @@ class HomeworkProvider with ChangeNotifier {
 
     if (DemoData.isDemo(user.id)) {
       _homework = DemoData.homework;
+      await store(_homework);
       notifyListeners();
+      await convertBySettings();
       return;
     }
 

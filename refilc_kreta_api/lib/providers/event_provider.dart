@@ -26,6 +26,13 @@ class EventProvider with ChangeNotifier {
   Future<void> restore() async {
     String? userId = Provider.of<UserProvider>(_context, listen: false).id;
 
+    // Demo account: data is generated locally and is not stored in the DB
+    if (userId != null && DemoData.isDemo(userId)) {
+      _events = DemoData.events;
+      notifyListeners();
+      return;
+    }
+
     // Load events from the database
     if (userId != null) {
       var dbEvents =
@@ -41,7 +48,10 @@ class EventProvider with ChangeNotifier {
   Future<void> fetch() async {
     User? user = Provider.of<UserProvider>(_context, listen: false).user;
     if (user == null) throw "Cannot fetch Events for User null";
-    if (DemoData.isDemo(user.id)) return;
+    if (DemoData.isDemo(user.id)) {
+      await store(DemoData.events);
+      return;
+    }
     String iss = user.instituteCode;
 
     List? eventsJson = await Provider.of<KretaClient>(_context, listen: false)

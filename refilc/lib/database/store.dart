@@ -52,7 +52,13 @@ class UserDatabaseStore {
 
   final Database db;
 
+  // The demo account's data is generated on-the-fly (without raw KRÉTA json),
+  // so it must not be persisted to the database: it couldn't be parsed back
+  // from there. Demo data lives in memory only and is re-generated on sync.
+  bool _isDemoUser(String userId) => userId == demoUserId;
+
   Future<void> storeGrades(List<Grade> grades, {required String userId}) async {
+    if (_isDemoUser(userId)) return;
     String gradesJson = jsonEncode(grades.map((e) => e.json).toList());
     await db.update("user_data", {"grades": gradesJson},
         where: "id = ?", whereArgs: [userId]);
@@ -60,6 +66,7 @@ class UserDatabaseStore {
 
   Future<void> storeLessons(Map<Week, List<Lesson>?> lessons,
       {required String userId}) async {
+    if (_isDemoUser(userId)) return;
     final map = lessons.map<String, List<Map<String, Object?>>>(
       (k, v) => MapEntry(k.id.toString(),
           v!.where((e) => e.json != null).map((e) => e.json!).toList().cast()),
@@ -70,6 +77,7 @@ class UserDatabaseStore {
   }
 
   Future<void> storeExams(List<Exam> exams, {required String userId}) async {
+    if (_isDemoUser(userId)) return;
     String examsJson = jsonEncode(exams.map((e) => e.json).toList());
     await db.update("user_data", {"exams": examsJson},
         where: "id = ?", whereArgs: [userId]);
@@ -77,6 +85,7 @@ class UserDatabaseStore {
 
   Future<void> storeHomework(List<Homework> homework,
       {required String userId}) async {
+    if (_isDemoUser(userId)) return;
     String homeworkJson = jsonEncode(homework.map((e) => e.json).toList());
     await db.update("user_data", {"homework": homeworkJson},
         where: "id = ?", whereArgs: [userId]);
@@ -84,6 +93,7 @@ class UserDatabaseStore {
 
   Future<void> storeMessages(List<Message> messages,
       {required String userId}) async {
+    if (_isDemoUser(userId)) return;
     String messagesJson = jsonEncode(messages.map((e) => e.json).toList());
     await db.update("user_data", {"messages": messagesJson},
         where: "id = ?", whereArgs: [userId]);
@@ -91,18 +101,21 @@ class UserDatabaseStore {
 
   Future<void> storeRecipients(List<SendRecipient> recipients,
       {required String userId}) async {
+    if (_isDemoUser(userId)) return;
     String recipientsJson = jsonEncode(recipients.map((e) => e.json).toList());
     await db.update("user_data", {"recipients": recipientsJson},
         where: "id = ?", whereArgs: [userId]);
   }
 
   Future<void> storeNotes(List<Note> notes, {required String userId}) async {
+    if (_isDemoUser(userId)) return;
     String notesJson = jsonEncode(notes.map((e) => e.json).toList());
     await db.update("user_data", {"notes": notesJson},
         where: "id = ?", whereArgs: [userId]);
   }
 
   Future<void> storeEvents(List<Event> events, {required String userId}) async {
+    if (_isDemoUser(userId)) return;
     String eventsJson = jsonEncode(events.map((e) => e.json).toList());
     await db.update("user_data", {"events": eventsJson},
         where: "id = ?", whereArgs: [userId]);
@@ -110,6 +123,7 @@ class UserDatabaseStore {
 
   Future<void> storeAbsences(List<Absence> absences,
       {required String userId}) async {
+    if (_isDemoUser(userId)) return;
     String absencesJson = jsonEncode(absences.map((e) => e.json).toList());
     await db.update("user_data", {"absences": absencesJson},
         where: "id = ?", whereArgs: [userId]);
@@ -117,6 +131,7 @@ class UserDatabaseStore {
 
   Future<void> storeGroupAverages(List<GroupAverage> groupAverages,
       {required String userId}) async {
+    if (_isDemoUser(userId)) return;
     String groupAveragesJson =
         jsonEncode(groupAverages.map((e) => e.json).toList());
     await db.update("user_data", {"group_averages": groupAveragesJson},

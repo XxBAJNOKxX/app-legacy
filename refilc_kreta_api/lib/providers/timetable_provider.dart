@@ -46,6 +46,14 @@ class TimetableProvider with ChangeNotifier {
     String? userId = _user.id;
     _activeUserId = userId;
 
+    // Demo account: data is generated locally and is not stored in the DB
+    if (userId != null && DemoData.isDemo(userId)) {
+      final week = Week.current();
+      lessons = {week: DemoData.lessonsForWeek(week)};
+      await convertBySettings();
+      return;
+    }
+
     // Load lessons from the database
     if (userId != null) {
       var dbLessons = await _database.userQuery.getLessons(userId: userId);
@@ -104,7 +112,7 @@ class TimetableProvider with ChangeNotifier {
     if (user == null) throw "Cannot fetch Lessons for User null";
 
     if (DemoData.isDemo(user.id)) {
-      lessons = DemoData.timetable;
+      lessons[week] = DemoData.lessonsForWeek(week);
       notifyListeners();
       return;
     }

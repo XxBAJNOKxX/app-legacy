@@ -134,8 +134,10 @@ class User {
         ),
         birth: DateTime(2005, 9, 1),
         yearId: '1',
-        parents: [],
+        address: '1234 Budapest, Demo utca 1.',
+        parents: ['Demo Szülő'],
         gradeDelay: 0,
+        json: _demoStudentJson,
       ),
       role: Role.student,
       nickname: 'Demo',
@@ -144,6 +146,28 @@ class User {
       refreshToken: 'demo',
     );
   }
+
+  // A complete KRÉTA-style student json for the demo user, so that
+  // persisting the account (User.toMap) and reading it back
+  // (User.fromMap -> Student.fromJson) reproduces the same student.
+  static final Map<String, Object?> _demoStudentJson = {
+    'Uid': demoUserId,
+    'Nev': 'Demo Diák',
+    'SzuletesiDatum': '2005-09-01T00:00:00',
+    'IntezmenyAzonosito': 'demo',
+    'IntezmenyNev': 'Demo Iskola',
+    'TanevUid': '1',
+    'Gondviselok': [
+      {'Nev': 'Demo Szülő'}
+    ],
+    'Cimek': ['1234 Budapest, Demo utca 1.'],
+    'Intezmeny': {
+      'TestreszabasBeallitasok': {
+        'ErtekelesekMegjelenitesenekKesleltetesenekMerteke': 0,
+      },
+    },
+    'Bankszamla': {'BankszamlaSzam': ''},
+  };
 
   bool get isDemo => id == demoUserId;
 

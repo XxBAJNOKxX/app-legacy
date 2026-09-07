@@ -20,8 +20,6 @@
 
 import 'dart:io' show Platform;
 import 'package:refilc/api/login.dart';
-import 'package:refilc/api/providers/user_provider.dart';
-import 'package:refilc/models/user.dart';
 import 'package:refilc/theme/colors/colors.dart';
 import 'package:refilc_mobile_ui/common/custom_snack_bar.dart';
 import 'package:refilc_mobile_ui/common/system_chrome.dart';
@@ -32,7 +30,6 @@ import 'package:flutter/services.dart';
 import 'login_screen.i18n.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:refilc_mobile_ui/screens/login/kreten_login.dart'; //new library for new web login
-import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.back = false});
@@ -138,12 +135,7 @@ class LoginScreenState extends State<LoginScreen> {
                               setState(() => _demoTapCount++);
                               if (_demoTapCount >= 10) {
                                 _demoTapCount = 0;
-                                final userProvider = Provider.of<UserProvider>(context, listen: false);
-                                final demoUser = User.demo();
-                                userProvider.addUser(demoUser);
-                                userProvider.setUser(demoUser.id);
-                                setSystemChrome(context);
-                                Navigator.of(context).pushReplacementNamed('login_to_navigation');
+                                _loginDemo();
                               }
                             },
                             child: Image.asset(
@@ -364,12 +356,7 @@ class LoginScreenState extends State<LoginScreen> {
                                                               if (Navigator.of(sheetContext).canPop()) {
                                                                 Navigator.of(sheetContext).pop();
                                                               }
-                                                              final userProvider = Provider.of<UserProvider>(context, listen: false);
-                                                              final demoUser = User.demo();
-                                                              userProvider.addUser(demoUser);
-                                                              userProvider.setUser(demoUser.id);
-                                                              setSystemChrome(context);
-                                                              Navigator.of(context).pushReplacementNamed('login_to_navigation');
+                                                              _loginDemo();
                                                             },
                                                           ),
                                                         ),
@@ -408,6 +395,19 @@ class LoginScreenState extends State<LoginScreen> {
                                   style: TextStyle(
                                     color: AppColors.of(context).loginSecondary,
                                     fontWeight: FontWeight.w500,
+                                    fontSize: 14.0,
+                                  ),
+                                ),
+                              ),
+                              // demo mode
+                              TextButton(
+                                onPressed: _loginDemo,
+                                child: Text(
+                                  "demo_login".i18n,
+                                  style: TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    color: AppColors.of(context).loginSecondary,
+                                    fontWeight: FontWeight.w700,
                                     fontSize: 14.0,
                                   ),
                                 ),
@@ -457,6 +457,19 @@ class LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  // Logs in with the built-in demo account (works fully offline,
+  // every screen is filled with locally generated sample data).
+  void _loginDemo() {
+    demoLoginAPI(
+      context: context,
+      onSuccess: () {
+        if (!mounted) return;
+        setSystemChrome(context);
+        Navigator.of(context).pushReplacementNamed('login_to_navigation');
+      },
     );
   }
 

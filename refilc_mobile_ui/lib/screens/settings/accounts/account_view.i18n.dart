@@ -12,6 +12,9 @@ extension Localization on String {
           "parents_phone": "Parents' phone number: ",
           "grade_delay": "Grade visibility delay",
           "hrs": "%s hour(s)",
+          "demo_mode": "Demo mode",
+          "demo_mode_desc":
+              "This is a built-in demo account with locally generated sample data.",
         },
         "hu_hu": {
           "birthdate": "Születési dátum",
@@ -21,6 +24,9 @@ extension Localization on String {
           "parents": "Szülő(k)",
           "grade_delay": "Jegy megjelenítési késleltetés",
           "hrs": "%s óra",
+          "demo_mode": "Demó mód",
+          "demo_mode_desc":
+              "Ez egy beépített demó fiók, helyben generált mintaadatokkal.",
         },
         "de_de": {
           "birthdate": "Geburtsdatum",
@@ -30,6 +36,9 @@ extension Localization on String {
           "parents": "Elter(n)",
           "grade_delay": "Notenverzögerung",
           "hrs": "%s Stunde(n)",
+          "demo_mode": "Demomodus",
+          "demo_mode_desc":
+              "Dies ist ein eingebautes Demokonto mit lokal generierten Beispieldaten.",
         },
       };
 

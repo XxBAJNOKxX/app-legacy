@@ -42,6 +42,11 @@ class AccountView extends StatelessWidget {
             username: SelectableText(user.username),
           ),
 
+          // Demo account indicator
+          if (user.isDemo)
+            Detail(
+                title: "demo_mode".i18n, description: "demo_mode_desc".i18n),
+
           // User details
           Detail(
               title: "birthdate".i18n,

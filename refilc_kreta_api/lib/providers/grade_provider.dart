@@ -73,6 +73,30 @@ Future<void> unseenAll() async {
   Future<void> restore() async {
     String? userId = _user.id;
 
+    // Demo account: data is generated locally and is not stored in the DB
+    if (userId != null && DemoData.isDemo(userId)) {
+      final userQuery = _database.userQuery;
+
+      _grades = DemoData.grades;
+      _groupAvg = DemoData.groupAverages;
+      _allSubjects = DemoData.subjects;
+      await convertBySettings();
+      await getGradeStreak();
+      notifyListeners();
+      DateTime lastSeenDB = await userQuery.lastSeen(
+          userId: userId, category: LastSeenCategory.surprisegrade);
+      if (lastSeenDB.millisecondsSinceEpoch == 0 ||
+          lastSeenDB.year == 0 ||
+          !_settings.gradeOpeningFun) {
+        _lastSeen = DateTime.now();
+        await seenAll();
+      } else {
+        _lastSeen = lastSeenDB;
+      }
+      notifyListeners();
+      return;
+    }
+
     // Load grades from the database
     if (userId != null) {
       final userQuery = _database.userQuery;
@@ -174,6 +198,8 @@ Future<void> unseenAll() async {
     if (DemoData.isDemo(user.id)) {
       await store(DemoData.grades);
       await storeGroupAvg(DemoData.groupAverages);
+      _allSubjects = DemoData.subjects;
+      notifyListeners();
       return;
     }
 

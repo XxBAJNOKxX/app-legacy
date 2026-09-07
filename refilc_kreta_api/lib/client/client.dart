@@ -260,6 +260,9 @@ class KretaClient {
     User? loginUser = _user.user;
     if (loginUser == null) return null;
 
+    // The demo account has no real KRÉTA session
+    if (loginUser.isDemo) return 'success';
+
     Map<String, String> headers = {
       "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
       "accept": "*/*",
@@ -345,6 +348,9 @@ class KretaClient {
   Future<void> logout() async {
     User? loginUser = _user.user;
     if (loginUser == null) return;
+
+    // The demo account has no real KRÉTA session
+    if (loginUser.isDemo) return;
 
     Map<String, String> headers = {
       "content-type": "application/x-www-form-urlencoded",

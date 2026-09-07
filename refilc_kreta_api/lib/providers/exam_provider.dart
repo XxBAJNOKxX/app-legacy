@@ -26,6 +26,14 @@ class ExamProvider with ChangeNotifier {
   Future<void> restore() async {
     String? userId = Provider.of<UserProvider>(_context, listen: false).id;
 
+    // Demo account: data is generated locally and is not stored in the DB
+    if (userId != null && DemoData.isDemo(userId)) {
+      _exams = DemoData.exams;
+      notifyListeners();
+      await convertBySettings();
+      return;
+    }
+
     // Load exams from the database
     if (userId != null) {
       var dbExams = await Provider.of<DatabaseProvider>(_context, listen: false)

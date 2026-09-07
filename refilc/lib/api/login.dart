@@ -209,6 +209,48 @@ Future loginAPI({
   return LoginState.failed;
 }
 
+// Logs in with the built-in demo account, which works fully offline:
+// every screen is filled with locally generated sample data.
+Future demoLoginAPI({
+  required BuildContext context,
+  void Function(User)? onLogin,
+  void Function()? onSuccess,
+}) async {
+  User user = User.demo();
+
+  if (onLogin != null) onLogin(user);
+
+  // Store the demo account in the database so it survives app restarts
+  // (its content is generated on the fly and is not persisted).
+  await Provider.of<DatabaseProvider>(context, listen: false)
+      .store
+      .storeUser(user);
+  Provider.of<UserProvider>(context, listen: false).addUser(user);
+  Provider.of<UserProvider>(context, listen: false).setUser(user.id);
+
+  // Load demo data into the providers
+  try {
+    await Future.wait([
+      Provider.of<GradeProvider>(context, listen: false).fetch(),
+      Provider.of<TimetableProvider>(context, listen: false)
+          .fetch(week: Week.current()),
+      Provider.of<ExamProvider>(context, listen: false).fetch(),
+      Provider.of<HomeworkProvider>(context, listen: false).fetch(),
+      Provider.of<MessageProvider>(context, listen: false).fetchAll(),
+      Provider.of<MessageProvider>(context, listen: false).fetchAllRecipients(),
+      Provider.of<NoteProvider>(context, listen: false).fetch(),
+      Provider.of<EventProvider>(context, listen: false).fetch(),
+      Provider.of<AbsenceProvider>(context, listen: false).fetch(),
+    ]);
+  } catch (error) {
+    print("WARNING: failed to load demo data: $error");
+  }
+
+  if (onSuccess != null) onSuccess();
+
+  return LoginState.success;
+}
+
 // new login api
 Future newLoginAPI({
   required String code,

@@ -1,12 +1,14 @@
 import 'package:refilc/models/user.dart';
 import 'package:refilc_kreta_api/models/absence.dart';
 import 'package:refilc_kreta_api/models/category.dart';
+import 'package:refilc_kreta_api/models/event.dart';
 import 'package:refilc_kreta_api/models/exam.dart';
 import 'package:refilc_kreta_api/models/grade.dart';
 import 'package:refilc_kreta_api/models/group_average.dart';
 import 'package:refilc_kreta_api/models/homework.dart';
 import 'package:refilc_kreta_api/models/lesson.dart';
 import 'package:refilc_kreta_api/models/message.dart';
+import 'package:refilc_kreta_api/models/note.dart';
 import 'package:refilc_kreta_api/models/recipient.dart';
 import 'package:refilc_kreta_api/models/subject.dart';
 import 'package:refilc_kreta_api/models/teacher.dart';
@@ -127,10 +129,9 @@ class DemoData {
     );
   }
 
-  static Map<Week, List<Lesson>> get timetable {
-    final week = Week.current();
-    return {week: _lessonsForWeek(week)};
-  }
+  // Generates lessons for any requested week so the timetable
+  // can be browsed back and forth in demo mode.
+  static List<Lesson> lessonsForWeek(Week week) => _lessonsForWeek(week);
 
   static List<Lesson> _lessonsForWeek(Week week) {
     final monday = week.start;
@@ -379,6 +380,193 @@ class DemoData {
         GroupAverage(uid: 'demo-avg-chem', average: 3.7, subject: _subjectChem),
         GroupAverage(uid: 'demo-avg-pe', average: 4.8, subject: _subjectPE),
         GroupAverage(uid: 'demo-avg-it', average: 4.3, subject: _subjectIT),
+      ];
+
+  // Every subject of the demo student (also ones without any grades yet,
+  // so the "missing subjects" feature of the grades page is testable).
+  static List<GradeSubject> get subjects => [
+        _subjectMath,
+        _subjectHun,
+        _subjectHist,
+        _subjectEng,
+        _subjectPhy,
+        _subjectBio,
+        _subjectChem,
+        _subjectPE,
+        _subjectIT,
+        GradeSubject(
+          id: 'demo-subject-music',
+          category: Category(id: 'enek_zene', name: 'enek_zene'),
+          name: 'Ének-zene',
+        ),
+        GradeSubject(
+          id: 'demo-subject-head',
+          category: Category(id: 'osztalyfonoki', name: 'osztalyfonoki'),
+          name: 'Osztályfőnöki',
+        ),
+      ];
+
+  static final _noteTypePraise =
+      Category(id: '1,Dicseret', name: 'Dicséret', description: 'Dicséret');
+  static final _noteTypeWarning =
+      Category(id: '2,Into', name: 'Intő', description: 'Intő');
+  static final _noteTypeNote = Category(
+      id: '3,TanariFeljegyzes',
+      name: 'Tanári feljegyzés',
+      description: 'Tanári feljegyzés');
+
+  static List<Note> get notes {
+    final now = DateTime.now();
+    return [
+      Note(
+        id: 'demo-note-1',
+        title: 'Dicséret informatikából',
+        date: now.subtract(const Duration(days: 4)),
+        submitDate: now.subtract(const Duration(days: 4)),
+        teacher: _teacherSzabo,
+        seenDate: now.subtract(const Duration(days: 3)),
+        groupId: 'demo-group',
+        content:
+            'Kiemelkedő munka a programozás alapjai órán végzett csoportos feladatban.',
+        type: _noteTypePraise,
+      ),
+      Note(
+        id: 'demo-note-2',
+        title: 'Tanári feljegyzés',
+        date: now.subtract(const Duration(days: 9)),
+        submitDate: now.subtract(const Duration(days: 9)),
+        teacher: _teacherToth,
+        seenDate: now.subtract(const Duration(days: 8)),
+        groupId: 'demo-group',
+        content:
+            'Az osztály kirándulásával kapcsolatban a hozzájáruló nyilatkozat leadásának határideje közeleg.',
+        type: _noteTypeNote,
+      ),
+      Note(
+        id: 'demo-note-3',
+        title: 'Intő késés miatt',
+        date: now.subtract(const Duration(days: 16)),
+        submitDate: now.subtract(const Duration(days: 16)),
+        teacher: _teacherNagy,
+        seenDate: now.subtract(const Duration(days: 15)),
+        groupId: 'demo-group',
+        content: 'Ismételt késés a matematika óráról (15 perc).',
+        type: _noteTypeWarning,
+      ),
+    ];
+  }
+
+  static List<Event> get events {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return [
+      Event(
+        id: 'demo-event-1',
+        start: today.add(const Duration(days: 3, hours: 17)),
+        end: today.add(const Duration(days: 3, hours: 18, minutes: 30)),
+        title: 'Szülői értekezlet',
+        content:
+            'Szülői értekezlet a 9.A osztály számára a földszinti díszteremben.',
+      ),
+      Event(
+        id: 'demo-event-2',
+        start: today.add(const Duration(days: 10)),
+        end: today.add(const Duration(days: 10, hours: 16)),
+        title: 'Osztálykirándulás',
+        content:
+            'Egész napos osztálykirándulás. Találkozó reggel 7:30-kor az iskola előtt.',
+      ),
+      Event(
+        id: 'demo-event-3',
+        start: today.add(const Duration(days: 21)),
+        end: today.add(const Duration(days: 25)),
+        title: 'Tavaszi szünet',
+        content: 'Az iskolai oktatás szünetel.',
+      ),
+      Event(
+        id: 'demo-event-4',
+        start: today.subtract(const Duration(days: 5)),
+        end: today.add(const Duration(days: -5, hours: 14)),
+        title: 'Iskolanyílt nap',
+        content: 'Nyílt nap a leendő kilencedikeseknek és szüleiknek.',
+      ),
+    ];
+  }
+
+  static List<Message> get sentMessages {
+    final now = DateTime.now();
+    return [
+      Message(
+        id: 20001,
+        messageId: 20001,
+        seen: true,
+        deleted: false,
+        date: now.subtract(const Duration(days: 2)),
+        author: 'Demo Diák',
+        content:
+            'Tisztelt Tanárnő!\n\nSzeretnék érdeklődni, hogy mikor tudnám megírni a matematika pótdolgozatot.\n\nKöszönettel,\nDemo Diák',
+        subject: 'Pótdolgozat időpontja',
+        type: MessageType.sent,
+        recipients: [Recipient(id: 901, name: 'Nagy Katalin', kretaId: 901)],
+        attachments: [],
+        isSeen: true,
+      ),
+    ];
+  }
+
+  static final SendRecipientType _recipientTypeTeacher = SendRecipientType(
+    id: 1,
+    code: 'TANAR',
+    description: 'Tanár',
+    name: 'Tanár',
+    shortName: 'Tanár',
+  );
+
+  static final SendRecipientType _recipientTypeDirectorate = SendRecipientType(
+    id: 2,
+    code: 'IGAZGATOSAG',
+    description: 'Igazgatóság',
+    name: 'Igazgatóság',
+    shortName: 'Igazgatóság',
+  );
+
+  // Addressable recipients for the demo user (message composition screen).
+  static List<SendRecipient> get recipients => [
+        SendRecipient(
+            id: 901,
+            kretaId: 901,
+            name: 'Nagy Katalin',
+            type: _recipientTypeTeacher),
+        SendRecipient(
+            id: 902,
+            kretaId: 902,
+            name: 'Szabó Péter',
+            type: _recipientTypeTeacher),
+        SendRecipient(
+            id: 903,
+            kretaId: 903,
+            name: 'Kovács Mária',
+            type: _recipientTypeTeacher),
+        SendRecipient(
+            id: 904,
+            kretaId: 904,
+            name: 'Tóth László',
+            type: _recipientTypeTeacher),
+        SendRecipient(
+            id: 905,
+            kretaId: 905,
+            name: 'Varga Erzsébet',
+            type: _recipientTypeTeacher),
+        SendRecipient(
+            id: 906,
+            kretaId: 906,
+            name: 'Fekete Gábor',
+            type: _recipientTypeTeacher),
+        SendRecipient(
+            id: 950,
+            kretaId: 950,
+            name: 'Titkárság',
+            type: _recipientTypeDirectorate),
       ];
 
   static bool isDemo(String? userId) => userId == demoUserId;
